@@ -239,12 +239,21 @@
   .wl-todo:hover .wl-todo-tools { opacity: 1; }
   @media (hover: none) { .wl-todo-tools { opacity: .6; } }
 
-  .wl-section-select, .wl-move-select {
+  .wl-section-select {
     border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--muted);
     font: inherit; font-size: 12px; padding: 5px 8px; cursor: pointer; outline: none;
   }
-  .wl-section-select:focus, .wl-move-select:focus { border-color: var(--accent); }
-  .wl-move-select { font-size: 11px; padding: 3px 6px; }
+  .wl-section-select:focus { border-color: var(--accent); }
+  /* Move-to-section: just an icon, with the native section picker overlaid invisibly. */
+  .wl-move { position: relative; }
+  .wl-move-select {
+    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0;
+    border: 0; opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none;
+    font-size: 16px; /* keeps iOS from zooming the page when the picker opens */
+  }
+  /* Show a focus ring only for keyboard users; the select itself is transparent,
+     so the ring goes on the icon wrapper. Invisible for mouse/touch. */
+  .wl-move:has(.wl-move-select:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .wl-sec { margin-top: 22px; }
   .wl-sec-head {
@@ -1152,6 +1161,7 @@
   var XICON = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
   var CHEVUP = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
   var CHEVDOWN = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var MOVEICON = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 3v4.6a1.8 1.8 0 0 0 1.8 1.8H12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path><path d="M9.7 7.1l2.6 2.3-2.6 2.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
   function renderTheme() {
     $("#root").classList.toggle("dark", theme === "dark");
@@ -1194,9 +1204,12 @@
     } else {
       h += '<div class="wl-todo-text" data-edit-todo="' + esc(t.id) + '" title="Click to edit">' + esc(t.text) + '</div>';
       h += '<div class="wl-todo-tools">';
-      h += '<select class="wl-move-select" data-move="' + esc(t.id) + '" aria-label="Move to section">' +
-        sections.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === t.section ? " selected" : "") + '>' + esc(s.name) + '</option>'; }).join("") +
-        '</select>';
+      if (sections.length > 1) {
+        h += '<span class="wl-act wl-move" title="Move to section">' + MOVEICON +
+          '<select class="wl-move-select" data-move="' + esc(t.id) + '" aria-label="Move to section">' +
+          sections.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === t.section ? " selected" : "") + '>' + esc(s.name) + '</option>'; }).join("") +
+          '</select></span>';
+      }
       h += '<button class="wl-act wl-del" data-del-todo="' + esc(t.id) + '" aria-label="Delete to-do">' + TRASH + '</button>';
       h += '</div>';
     }
