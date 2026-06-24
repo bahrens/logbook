@@ -247,8 +247,8 @@
   /* Move-to-section: just an icon, with the native section picker overlaid invisibly. */
   .wl-move { position: relative; }
   .wl-move-select {
-    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0;
-    border: 0; opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none;
+    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+    box-sizing: border-box; padding: 2px 12px; border: 0; opacity: 0; cursor: pointer;
     font-size: 16px; /* keeps iOS from zooming the page when the picker opens */
   }
   /* Show a focus ring only for keyboard users; the select itself is transparent,
