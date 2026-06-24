@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logbook</title>
+<style>
+  html, body { margin: 0; padding: 0; }
+  .wl-root {
+    --bg: #F6F7F5;
+    --surface: #FFFFFF;
+    --ink: #1B1F23;
+    --muted: #6E777E;
+    --faint: #9AA4AC;
+    --border: #E6E9E6;
+    --line: #DFE3DF;
+    --accent: #2E7D5B;
+    --accent-soft: #EAF3EE;
+    --danger: #B4452F;
+    --accent-hover: #276A4D;
+    --chip-hover: #DCEDE3;
+    --del-bg: #F7ECE8;
+    --warn: #C77B30;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background .2s ease, color .2s ease;
+  }
+  .wl-root.dark {
+    --bg: #15171A;
+    --surface: #1E2125;
+    --ink: #E8EAE7;
+    --muted: #9AA3A9;
+    --faint: #6B747B;
+    --border: #2C3035;
+    --line: #2C3035;
+    --accent: #4FB286;
+    --accent-soft: #1F2E27;
+    --danger: #D9785F;
+    --accent-hover: #3E9870;
+    --chip-hover: #284036;
+    --del-bg: #382722;
+    --warn: #E2A24E;
+  }
+  .wl-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-feature-settings: "tnum" 1;
+  }
+  .wl-wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px 96px; }
+
+  .wl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .wl-title { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0; cursor: text; }
+  .wl-title-input {
+    font: inherit; font-size: 22px; font-weight: 650; letter-spacing: -0.01em;
+    border: 1px solid var(--accent); border-radius: 8px; padding: 1px 8px; margin: -2px 0;
+    background: var(--surface); color: var(--ink); outline: none; max-width: 100%;
+  }
+  .wl-headleft { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .wl-space-wrap { position: relative; }
+  .wl-space-btn {
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    width: 26px; height: 26px; border-radius: 7px; border: 1px solid transparent;
+    background: transparent; color: var(--faint); padding: 0;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .wl-space-btn:hover { color: var(--accent); border-color: var(--border); background: var(--surface); }
+  .wl-space-menu { left: 0; right: auto; min-width: 204px; }
+  .wl-space-item .wl-check-mark { margin-left: auto; color: var(--accent); display: inline-flex; }
+  .wl-space-item.active { font-weight: 600; }
+  .wl-space-new {
+    display: flex; gap: 6px; align-items: center; padding: 6px 8px;
+  }
+  .wl-space-new input {
+    flex: 1 1 auto; min-width: 0; border: 1px solid var(--border); border-radius: 7px; outline: none;
+    font: inherit; font-size: 13px; padding: 6px 9px; background: var(--surface); color: var(--ink);
+  }
+  .wl-space-new input:focus { border-color: var(--accent); }
+  .wl-space-new button {
+    border: 0; cursor: pointer; background: var(--accent); color: #fff; font: inherit; font-size: 12px;
+    font-weight: 600; padding: 6px 10px; border-radius: 7px; width: auto;
+  }
+  .wl-count { font-size: 12px; color: var(--faint); letter-spacing: 0.04em; text-transform: uppercase; }
+  .wl-headright { display: flex; align-items: center; gap: 12px; }
+
+  .wl-toggle {
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); padding: 0;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .wl-toggle:hover { color: var(--accent); border-color: var(--accent); }
+
+  .wl-export-wrap { position: relative; }
+  .wl-export {
+    display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 11px;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .wl-export:hover { color: var(--accent); border-color: var(--accent); }
+  .wl-menu {
+    position: absolute; right: 0; top: 38px; z-index: 20; min-width: 172px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(15,20,18,0.16); padding: 5px;
+  }
+  .wl-menu button {
+    display: flex; align-items: center; gap: 9px; width: 100%; box-sizing: border-box;
+    border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 13px;
+    text-align: left; padding: 8px 10px; border-radius: 7px; cursor: pointer;
+  }
+  .wl-menu button:hover { background: var(--bg); }
+  .wl-menu .wl-msub { color: var(--faint); font-size: 11px; margin-left: auto; }
+  .wl-menu-label {
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint);
+    padding: 6px 10px 3px;
+  }
+  .wl-divider { height: 1px; background: var(--border); margin: 5px 6px; }
+  .wl-backdrop { position: fixed; inset: 0; z-index: 10; display: none; }
+
+  .wl-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--warn);
+    display: inline-block; margin-left: 6px; flex: 0 0 auto;
+  }
+  .wl-bkstatus { padding: 7px 10px 8px; }
+  .wl-bk-line1 { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--ink); }
+  .wl-bk-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .wl-bk-dot.dirty { background: var(--warn); }
+  .wl-bk-dot.clean { background: var(--accent); }
+  .wl-bk-line2 { font-size: 11px; color: var(--faint); margin-top: 3px; padding-left: 14px; }
+
+  .wl-status {
+    margin-top: 14px; padding: 9px 13px; border-radius: 9px; font-size: 13px;
+    border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent);
+  }
+  .wl-status.err { border-color: var(--danger); background: var(--del-bg); color: var(--danger); }
+
+  .wl-importbtn {
+    margin-top: 18px; display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    font: inherit; font-size: 13px; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .wl-importbtn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .wl-tabs {
+    display: flex; gap: 4px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .wl-tab {
+    border: 0; background: transparent; cursor: pointer; font: inherit; font-size: 14px;
+    font-weight: 600; color: var(--faint); padding: 8px 4px; margin-bottom: -1px;
+    border-bottom: 2px solid transparent; display: inline-flex; align-items: center; gap: 7px;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .wl-tab:hover { color: var(--muted); }
+  .wl-tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+  .wl-tabbadge {
+    font-size: 11px; font-weight: 600; min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .wl-tabbadge:empty { display: none; }
+
+  .wl-todo-composer { display: flex; gap: 10px; align-items: center; padding: 10px 12px; }
+  .wl-todo-input {
+    flex: 1 1 auto; border: 0; outline: none; background: transparent;
+    font: inherit; font-size: 15px; color: var(--ink);
+  }
+  .wl-todo-input::placeholder { color: var(--faint); }
+
+  .wl-todo {
+    display: flex; align-items: flex-start; gap: 11px; padding: 11px 4px;
+    border-bottom: 1px solid var(--border); position: relative;
+  }
+  .wl-todo:last-child { border-bottom: 0; }
+  .wl-check {
+    flex: 0 0 auto; width: 19px; height: 19px; margin-top: 1px; border-radius: 6px;
+    border: 1.6px solid var(--border); background: var(--surface); cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; color: #fff;
+    transition: background .12s ease, border-color .12s ease;
+  }
+  .wl-check:hover { border-color: var(--accent); }
+  .wl-check.done { background: var(--accent); border-color: var(--accent); }
+  .wl-todo-text {
+    flex: 1 1 auto; font-size: 15px; line-height: 1.5; color: var(--ink);
+    cursor: text; word-break: break-word; white-space: pre-wrap; padding-right: 8px;
+  }
+  .wl-todo.done .wl-todo-text { color: var(--faint); text-decoration: line-through; }
+  .wl-todo-edit {
+    flex: 1 1 auto; border: 1px solid var(--accent); border-radius: 7px; outline: none;
+    font: inherit; font-size: 15px; padding: 5px 8px; background: var(--surface); color: var(--ink);
+  }
+  .wl-todo-tools {
+    position: absolute; right: 0; top: 5px; display: flex; align-items: center; gap: 6px;
+    opacity: 0; transition: opacity .12s ease; background: var(--bg); padding-left: 10px;
+  }
+  .wl-todo:hover .wl-todo-tools { opacity: 1; }
+  @media (hover: none) { .wl-todo-tools { opacity: .6; } }
+
+  .wl-section-select, .wl-move-select {
+    border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--muted);
+    font: inherit; font-size: 12px; padding: 5px 8px; cursor: pointer; outline: none;
+  }
+  .wl-section-select:focus, .wl-move-select:focus { border-color: var(--accent); }
+  .wl-move-select { font-size: 11px; padding: 3px 6px; }
+
+  .wl-sec { margin-top: 22px; }
+  .wl-sec-head {
+    display: flex; align-items: center; gap: 8px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border); margin-bottom: 2px;
+  }
+  .wl-sec-name { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
+  .wl-sec-count { font-size: 11px; color: var(--faint); }
+  .wl-sec-tools { margin-left: auto; display: flex; gap: 1px; opacity: 0; transition: opacity .12s ease; }
+  .wl-sec-head:hover .wl-sec-tools { opacity: 1; }
+  @media (hover: none) { .wl-sec-tools { opacity: .55; } }
+  .wl-sec-tool { border: 0; background: transparent; cursor: pointer; color: var(--faint); padding: 3px; border-radius: 5px; display: inline-flex; }
+  .wl-sec-tool:hover { color: var(--accent); background: var(--accent-soft); }
+  .wl-sec-tool.danger:hover { color: var(--danger); background: var(--del-bg); }
+  .wl-sec-tool:disabled { opacity: .3; cursor: default; }
+  .wl-sec-name-input {
+    border: 1px solid var(--accent); border-radius: 6px; outline: none; font: inherit;
+    font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    padding: 3px 7px; background: var(--surface); color: var(--ink);
+  }
+  .wl-sec-empty { font-size: 12px; color: var(--faint); padding: 9px 4px; }
+
+  .wl-addsection { margin-top: 16px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .wl-section-input {
+    border: 1px solid var(--border); border-radius: 7px; outline: none; font: inherit;
+    font-size: 13px; padding: 6px 9px; background: var(--surface); color: var(--ink);
+  }
+  .wl-section-input:focus { border-color: var(--accent); }
+  .wl-section-save {
+    border: 0; cursor: pointer; background: var(--accent); color: #fff; font: inherit; font-size: 12px;
+    font-weight: 600; padding: 6px 11px; border-radius: 7px; margin: 0 4px;
+  }
+  .wl-section-save:hover { background: var(--accent-hover); }
+
+  .wl-completed { margin-top: 26px; border-top: 1px solid var(--border); }
+  .wl-completed-head {
+    display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px 0 6px;
+    user-select: none;
+  }
+  .wl-chev { color: var(--faint); display: inline-flex; transition: transform .15s ease; }
+  .wl-completed-head.collapsed .wl-chev { transform: rotate(-90deg); }
+  .wl-completed-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .wl-completed-count { font-size: 11px; color: var(--faint); }
+  .wl-clear {
+    margin-left: auto; border: 0; background: transparent; cursor: pointer; font: inherit;
+    font-size: 12px; color: var(--faint); padding: 3px 9px; border-radius: 6px;
+    transition: color .12s ease, background .12s ease;
+  }
+  .wl-clear:hover { color: var(--danger); background: var(--del-bg); }
+  .wl-clear.confirm { color: var(--danger); font-weight: 600; background: var(--del-bg); }
+  .wl-todo-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--faint);
+  }
+  .wl-linkbtn {
+    border: 0; background: transparent; cursor: pointer; font: inherit; font-size: 12px;
+    color: var(--muted); padding: 2px 4px; border-radius: 5px;
+  }
+  .wl-linkbtn:hover { color: var(--accent); }
+
+  .wl-composer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 1px 2px rgba(20,30,25,0.03);
+  }
+  .wl-textarea {
+    width: 100%; box-sizing: border-box; border: 0; resize: none; outline: none;
+    font: inherit; font-size: 15px; line-height: 1.5; color: var(--ink);
+    background: transparent; min-height: 72px; max-height: 340px; overflow-y: auto;
+    display: block;
+  }
+  .wl-textarea::placeholder { color: var(--faint); }
+  .wl-composer-foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .wl-taginput {
+    flex: 1 1 160px; min-width: 120px; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; font: inherit; font-size: 13px; outline: none; background: var(--bg);
+    color: var(--ink);
+  }
+  .wl-taginput:focus { border-color: var(--accent); background: var(--surface); }
+  .wl-add {
+    display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer;
+    background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 600;
+    padding: 8px 14px; border-radius: 8px; transition: background .15s ease, opacity .15s ease;
+  }
+  .wl-add:hover { background: var(--accent-hover); }
+  .wl-add:disabled { opacity: .45; cursor: not-allowed; }
+  .wl-hint { font-size: 11px; color: var(--faint); margin-left: auto; }
+
+  .wl-controls { display: flex; align-items: center; gap: 10px; margin: 22px 0 8px; flex-wrap: wrap; }
+  .wl-search { position: relative; flex: 1 1 200px; }
+  .wl-search input {
+    width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px 8px 32px; font: inherit; font-size: 13px; outline: none;
+    background: var(--surface); color: var(--ink);
+  }
+  .wl-search input:focus { border-color: var(--accent); }
+  .wl-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+
+  .wl-tagbar { display: flex; gap: 6px; flex-wrap: wrap; }
+  .wl-tagfilter {
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    font: inherit; font-size: 12px; padding: 4px 9px; border-radius: 999px; cursor: pointer;
+  }
+  .wl-tagfilter:hover { border-color: var(--accent); color: var(--accent); }
+  .wl-tagfilter.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .wl-daygroup { margin-top: 22px; }
+  .wl-dayhead {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--faint); padding-bottom: 8px; margin-bottom: 4px;
+  }
+  .wl-entry {
+    display: grid; grid-template-columns: 64px 1fr; gap: 14px;
+    position: relative; padding: 10px 0;
+  }
+  .wl-time { color: var(--accent); font-size: 12px; padding-top: 2px; text-align: right; white-space: nowrap; }
+  .wl-body { position: relative; border-left: 1px solid var(--line); padding-left: 16px; }
+  .wl-body::before {
+    content: ""; position: absolute; left: -4px; top: 7px; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--bg);
+  }
+  .wl-text { font-size: 15px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .wl-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+  .wl-chip {
+    font-size: 11px; color: var(--accent); background: var(--accent-soft);
+    padding: 2px 8px; border-radius: 999px; cursor: pointer;
+  }
+  .wl-chip:hover { background: var(--chip-hover); }
+  .wl-actions {
+    position: absolute; right: 0; top: 3px; display: flex; gap: 2px;
+    opacity: 0; transition: opacity .12s ease;
+  }
+  .wl-entry:hover .wl-actions { opacity: 1; }
+  @media (hover: none) { .wl-actions { opacity: .55; } }
+  .wl-act {
+    border: 0; background: transparent; cursor: pointer; color: var(--faint);
+    padding: 4px; border-radius: 6px; display: inline-flex;
+    transition: color .12s ease, background .12s ease;
+  }
+  .wl-act:hover { color: var(--accent); background: var(--accent-soft); }
+  .wl-act.wl-del:hover { color: var(--danger); background: var(--del-bg); }
+  .wl-confirm {
+    position: absolute; right: 0; top: 3px; border: 0; background: transparent; cursor: pointer;
+    color: var(--danger); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px;
+  }
+
+  .wl-edit { display: flex; flex-direction: column; gap: 8px; }
+  .wl-edit-text {
+    width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 10px; font: inherit; font-size: 15px; line-height: 1.5; color: var(--ink);
+    background: var(--surface); outline: none; resize: none;
+    min-height: 60px; max-height: 340px; overflow-y: auto;
+  }
+  .wl-edit-text:focus { border-color: var(--accent); }
+  .wl-edit-tags {
+    width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; font: inherit; font-size: 13px; outline: none;
+    background: var(--surface); color: var(--ink);
+  }
+  .wl-edit-tags:focus { border-color: var(--accent); }
+  .wl-edit-actions { display: flex; gap: 8px; align-items: center; }
+  .wl-save {
+    border: 0; cursor: pointer; background: var(--accent); color: #fff; font: inherit;
+    font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 8px;
+    transition: background .15s ease;
+  }
+  .wl-save:hover { background: var(--accent-hover); }
+  .wl-cancel {
+    border: 1px solid var(--border); cursor: pointer; background: var(--surface); color: var(--muted);
+    font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 8px;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .wl-cancel:hover { color: var(--ink); border-color: var(--muted); }
+
+  .wl-empty { text-align: center; color: var(--muted); padding: 56px 16px; }
+  .wl-empty h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; color: var(--ink); }
+  .wl-empty p { font-size: 13px; margin: 0; color: var(--faint); }
+
+  @media (max-width: 480px) {
+    .wl-entry { grid-template-columns: 52px 1fr; gap: 10px; }
+    .wl-body { padding-left: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wl-root * { transition: none !important; }
+  }
+  .wl-root :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wl-root" id="root">
+  <div class="wl-wrap">
+    <header class="wl-head">
+      <div class="wl-headleft">
+        <h1 class="wl-title" id="appTitle"></h1>
+        <div class="wl-space-wrap">
+          <button class="wl-space-btn" id="spaceMenuBtn" aria-haspopup="true" aria-expanded="false" aria-label="Switch space">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </button>
+          <div id="spaceMenu"></div>
+        </div>
+      </div>
+      <div class="wl-headright">
+        <span class="wl-count wl-mono" id="count"></span>
+        <div class="wl-export-wrap">
+          <button class="wl-export" id="backupBtn" aria-haspopup="true" aria-expanded="false">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1.8v8.4M5 7.4 8 10.4l3-3M2.8 11.5v1.2a1.5 1.5 0 0 0 1.5 1.5h7.4a1.5 1.5 0 0 0 1.5-1.5v-1.2"
+                stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Backup
+            <span class="wl-dot" id="bkDot" style="display:none" title="Changes since last backup"></span>
+          </button>
+          <div id="menu"></div>
+        </div>
+        <button class="wl-toggle" id="themeBtn" aria-label="Toggle theme"></button>
+      </div>
+    </header>
+
+    <div class="wl-tabs">
+      <button class="wl-tab" id="tab-log" data-tab="log">Log</button>
+      <button class="wl-tab" id="tab-todos" data-tab="todos">To-dos<span class="wl-tabbadge" id="todoBadge"></span></button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="view-log">
+      <div class="wl-composer">
+        <textarea class="wl-textarea" id="ta" placeholder="What happened? Decisions, blockers, follow-ups…"></textarea>
+        <div class="wl-composer-foot">
+          <input class="wl-taginput wl-mono" id="tagin" placeholder="tags: deploy, oncall, meeting">
+          <button class="wl-add" id="addBtn" disabled>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            </svg>
+            Add entry
+          </button>
+          <span class="wl-hint wl-mono">⌘/Ctrl + Enter</span>
+        </div>
+      </div>
+
+      <div class="wl-controls" id="controls" style="display:none">
+        <div class="wl-search">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.6"></circle>
+            <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          </svg>
+          <input id="search" placeholder="Search notes and tags">
+        </div>
+        <div class="wl-tagbar" id="tagbar"></div>
+      </div>
+
+      <div id="list"></div>
+    </div>
+
+    <div id="view-todos" style="display:none">
+      <div class="wl-composer wl-todo-composer">
+        <input class="wl-todo-input" id="todoInput" placeholder="Add a to-do…">
+        <select class="wl-section-select" id="todoSection" aria-label="Add to section"></select>
+        <button class="wl-add" id="todoAddBtn" disabled>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+          Add
+        </button>
+      </div>
+
+      <div id="todoSections"></div>
+
+      <div class="wl-addsection">
+        <button class="wl-linkbtn" id="addSectionBtn">+ Add section</button>
+        <span id="addSectionForm" style="display:none">
+          <input class="wl-section-input" id="addSectionInput" placeholder="Section name" maxlength="40">
+          <button class="wl-section-save" id="addSectionSave">Add</button>
+          <button class="wl-linkbtn" id="addSectionCancel">Cancel</button>
+        </span>
+      </div>
+
+      <div id="todoCompleted"></div>
+    </div>
+  </div>
+  <div class="wl-backdrop" id="backdrop"></div>
+  <input type="file" id="file" accept="application/json,.json" style="display:none">
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var NS = "logbook:";
+
+  var THEME_KEY = NS + "theme";
+
+  // ---- storage (localStorage with in-memory fallback) ----
+  var memStore = {};
+  var storageOk = true;
+  try {
+    var t = "__wl_test__";
+    localStorage.setItem(t, "1");
+    localStorage.removeItem(t);
+  } catch (e) { storageOk = false; }
+
+  function storeGet(k) {
+    try { return storageOk ? localStorage.getItem(k) : (k in memStore ? memStore[k] : null); }
+    catch (e) { return k in memStore ? memStore[k] : null; }
+  }
+  function storeSet(k, v) {
+    try { if (storageOk) localStorage.setItem(k, v); else memStore[k] = v; }
+    catch (e) { memStore[k] = v; }
+  }
+  function storeRemove(k) {
+    try { if (storageOk) localStorage.removeItem(k); else delete memStore[k]; }
+    catch (e) { delete memStore[k]; }
+  }
+  function readJSON(k, fb) {
+    try { var r = storeGet(k); if (r) return JSON.parse(r); } catch (e) {}
+    return fb;
+  }
+
+  // One-time migration: rename any legacy "worklog:" keys to "logbook:" so existing data carries over.
+  (function migratePrefix() {
+    if (!storageOk) return;
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("worklog:") === 0) keys.push(k);
+      }
+      keys.forEach(function (k) {
+        var nk = "logbook:" + k.slice(8);
+        if (localStorage.getItem(nk) === null) localStorage.setItem(nk, localStorage.getItem(k));
+        localStorage.removeItem(k);
+      });
+    } catch (e) {}
+  })();
+
+  // ---- spaces (separate, switchable storage areas) ----
+  function defaultSections() { return [{ id: "inbox", name: "Inbox" }, { id: "next", name: "Next" }, { id: "backlog", name: "Backlog" }]; }
+  var SPACE_SUFFIXES = ["entries", "todos", "sections", "backup", "todosection"];
+
+  var spaces = readJSON(NS + "spaces", null);
+  var activeSpace;
+  if (!spaces || !Array.isArray(spaces) || spaces.length === 0) {
+    // First run since Spaces were introduced: migrate any existing data into one space.
+    var sid = uid();
+    var defName = storeGet(NS + "title") || "Logbook";
+    spaces = [{ id: sid, name: defName }];
+    activeSpace = sid;
+    storeSet(NS + "spaces", JSON.stringify(spaces));
+    storeSet(NS + "activeSpace", sid);
+    var base = NS + "sp:" + sid + ":";
+    [[NS + "entries:v1", "entries"], [NS + "todos:v1", "todos"], [NS + "sections:v1", "sections"], [NS + "backup", "backup"], [NS + "todosection", "todosection"]].forEach(function (pair) {
+      var old = storeGet(pair[0]);
+      if (old != null && storeGet(base + pair[1]) == null) { storeSet(base + pair[1], old); storeRemove(pair[0]); }
+    });
+    storeRemove(NS + "title");
+  } else {
+    activeSpace = storeGet(NS + "activeSpace");
+    if (!spaces.some(function (s) { return s.id === activeSpace; })) activeSpace = spaces[0].id;
+  }
+  function saveSpaces() { storeSet(NS + "spaces", JSON.stringify(spaces)); }
+  function nsKey(suffix) { return NS + "sp:" + activeSpace + ":" + suffix; }
+  function currentSpace() { for (var i = 0; i < spaces.length; i++) { if (spaces[i].id === activeSpace) return spaces[i]; } return spaces[0]; }
+  function spaceName() { return currentSpace().name; }
+
+  // ---- per-space state ----
+  var entries = [], todos = [], sections = [], addTargetSection = null, lastBackup = { at: null, snap: [] };
+
+  var query = "";
+  var activeTag = null;
+  var confirmId = null;
+  var editingId = null;
+  var editBuf = { text: "", tags: "" };
+  var editingTodoId = null;
+  var editingSectionId = null;
+  var addingSection = false;
+  var completedCollapsed = (storeGet(NS + "completedCollapsed") === "0") ? false : true;
+  var confirmClear = false;
+  var confirmClearTimer = null;
+  var menuOpen = false;
+  var spaceMenuOpen = false;
+  var addingSpace = false;
+  var confirmDelSpace = false;
+  var confirmDelSpaceTimer = null;
+  var editingTitle = false;
+  var statusTimer = null;
+  var status = null;
+
+  function loadSpace() {
+    entries = readJSON(nsKey("entries"), []); if (!Array.isArray(entries)) entries = [];
+    todos = readJSON(nsKey("todos"), []); if (!Array.isArray(todos)) todos = [];
+    sections = readJSON(nsKey("sections"), []); if (!Array.isArray(sections) || sections.length === 0) sections = defaultSections();
+    var valid = {}; sections.forEach(function (s) { valid[s.id] = 1; });
+    var first = sections[0].id;
+    todos = todos.map(function (t) { return { id: t.id, text: t.text, done: !!t.done, createdAt: t.createdAt, section: (t.section && valid[t.section]) ? t.section : first }; });
+    addTargetSection = storeGet(nsKey("todosection"));
+    if (!sections.some(function (s) { return s.id === addTargetSection; })) addTargetSection = sections[0].id;
+    var b = readJSON(nsKey("backup"), null);
+    lastBackup = (b && Array.isArray(b.snap)) ? { at: b.at || null, snap: b.snap } : { at: null, snap: [] };
+    editingId = null; editBuf = { text: "", tags: "" }; editingTodoId = null; editingSectionId = null;
+    addingSection = false; confirmClear = false; query = ""; activeTag = null; confirmId = null;
+  }
+  loadSpace();
+
+  var activeView = storeGet(NS + "view");
+  if (activeView !== "log" && activeView !== "todos") activeView = "log";
+
+  var theme = storeGet(THEME_KEY);
+  if (theme !== "light" && theme !== "dark") {
+    theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  }
+
+  function saveEntries() { storeSet(nsKey("entries"), JSON.stringify(entries)); }
+  function saveTodos() { storeSet(nsKey("todos"), JSON.stringify(todos)); }
+  function saveSections() { storeSet(nsKey("sections"), JSON.stringify(sections)); }
+
+  // ---- helpers ----
+  function $(s) { return document.querySelector(s); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function uid() {
+    return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random();
+  }
+  function parseTags(rawStr) {
+    var seen = {}, out = [];
+    rawStr.split(",").forEach(function (x) {
+      var t = x.trim().replace(/^#/, "").toLowerCase();
+      if (t && !seen[t]) { seen[t] = 1; out.push(t); }
+    });
+    return out;
+  }
+  function dayKey(iso) { var d = new Date(iso); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
+  function dayLabel(iso) {
+    var d = new Date(iso), today = new Date(), y = new Date();
+    y.setDate(today.getDate() - 1);
+    if (dayKey(iso) === dayKey(today.toISOString())) return "Today";
+    if (dayKey(iso) === dayKey(y.toISOString())) return "Yesterday";
+    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  }
+  function timeLabel(iso) { return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); }
+  function stamp() {
+    var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  function slug(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "log"; }
+  function downloadFile(filename, text, mime) {
+    try {
+      var blob = new Blob([text], { type: mime });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (e) { console.error("Export failed:", e); }
+  }
+  function toMarkdown(list) {
+    var sorted = list.slice().sort(function (a, b) { return new Date(a.createdAt) - new Date(b.createdAt); });
+    var lines = ["# " + spaceName(), ""], curDay = null;
+    sorted.forEach(function (e) {
+      var d = new Date(e.createdAt), k = dayKey(e.createdAt);
+      if (k !== curDay) {
+        curDay = k;
+        lines.push("## " + d.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" }), "");
+      }
+      lines.push("**" + timeLabel(e.createdAt) + "** — " + e.text);
+      if (e.tags.length) lines.push("", e.tags.map(function (t) { return "`" + t + "`"; }).join(" "));
+      lines.push("");
+    });
+    if (todos.length) {
+      lines.push("## To-dos", "");
+      sections.forEach(function (s) {
+        var inSec = todos.filter(function (t) { return t.section === s.id; });
+        if (!inSec.length) return;
+        lines.push("### " + s.name, "");
+        var open = inSec.filter(function (t) { return !t.done; });
+        var done = inSec.filter(function (t) { return t.done; });
+        open.concat(done).forEach(function (t) {
+          lines.push("- [" + (t.done ? "x" : " ") + "] " + t.text);
+        });
+        lines.push("");
+      });
+    }
+    return lines.join("\n");
+  }
+  function toJSON(list) { return JSON.stringify({ exportedAt: new Date().toISOString(), entries: list, todos: todos, sections: sections }, null, 2); }
+
+  function hashStr(s) { var h = 5381, i = s.length; while (i) { h = (h * 33) ^ s.charCodeAt(--i); } return (h >>> 0).toString(36); }
+  function itemSig(kind, id, content) { return kind + ":" + id + ":" + hashStr(content); }
+  function entrySig(e) { return itemSig("e", e.id, e.text + "|" + e.tags.join(",") + "|" + e.createdAt); }
+  function todoSig(t) { return itemSig("t", t.id, t.text + "|" + (t.done ? "1" : "0") + "|" + (t.section || "") + "|" + t.createdAt); }
+  function sectionSig(s, i) { return itemSig("s", s.id, s.name + "|" + i); }
+  function snapshotNow() {
+    return entries.map(entrySig)
+      .concat(todos.map(todoSig))
+      .concat(sections.map(function (s, i) { return sectionSig(s, i); }));
+  }
+  function markBackedUp() {
+    lastBackup = { at: new Date().toISOString(), snap: snapshotNow() };
+    storeSet(nsKey("backup"), JSON.stringify(lastBackup));
+  }
+  function backupStatus() {
+    var snapMap = {}, curMap = {};
+    function parse(map, s) { var p = s.split(":"); map[p[0] + ":" + p[1]] = p[2]; }
+    (lastBackup.snap || []).forEach(function (s) { parse(snapMap, s); });
+    snapshotNow().forEach(function (s) { parse(curMap, s); });
+    var added = 0, edited = 0, deleted = 0;
+    Object.keys(curMap).forEach(function (id) {
+      if (!(id in snapMap)) added++; else if (curMap[id] !== snapMap[id]) edited++;
+    });
+    Object.keys(snapMap).forEach(function (id) { if (!(id in curMap)) deleted++; });
+    return { changes: added + edited + deleted, added: added, edited: edited, deleted: deleted, at: lastBackup.at, ever: !!lastBackup.at };
+  }
+  function relTime(iso) {
+    if (!iso) return "never";
+    var s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 45) return "just now";
+    var m = Math.floor(s / 60); if (m < 60) return m + "m ago";
+    var h = Math.floor(m / 60); if (h < 24) return h + "h ago";
+    var d = Math.floor(h / 24); if (d < 7) return d + "d ago";
+    return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+
+  function normalizeImported(r) {
+    if (!r || typeof r.text !== "string" || !r.text.trim()) return null;
+    var d = new Date(r.createdAt);
+    var createdAt = (r.createdAt && !isNaN(d.getTime())) ? d.toISOString() : new Date().toISOString();
+    var tags = Array.isArray(r.tags)
+      ? r.tags.filter(function (x) { return typeof x === "string" && x.trim(); }).map(function (x) { return x.trim().toLowerCase(); })
+      : [];
+    var id = (typeof r.id === "string" && r.id) ? r.id : uid();
+    return { id: id, text: r.text, tags: tags, createdAt: createdAt };
+  }
+  function mergeImported(incoming) {
+    var ids = {}, sigs = {};
+    entries.forEach(function (e) { ids[e.id] = 1; sigs[e.text + "|" + e.createdAt] = 1; });
+    var added = [], skipped = 0;
+    incoming.forEach(function (r) {
+      var e = normalizeImported(r);
+      if (!e) { skipped++; return; }
+      var sig = e.text + "|" + e.createdAt;
+      if (ids[e.id] || sigs[sig]) { skipped++; return; }
+      ids[e.id] = 1; sigs[sig] = 1; added.push(e);
+    });
+    var merged = entries.concat(added).sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+    return { merged: merged, added: added.length, skipped: skipped };
+  }
+  function normalizeTodo(r) {
+    if (!r || typeof r.text !== "string" || !r.text.trim()) return null;
+    var d = new Date(r.createdAt);
+    var createdAt = (r.createdAt && !isNaN(d.getTime())) ? d.toISOString() : new Date().toISOString();
+    var id = (typeof r.id === "string" && r.id) ? r.id : uid();
+    return { id: id, text: r.text.trim(), done: !!r.done, createdAt: createdAt, section: (typeof r.section === "string" ? r.section : null) };
+  }
+  function mergeSections(incoming) {
+    var byName = {}; sections.forEach(function (s) { byName[s.name.toLowerCase()] = s.id; });
+    var idMap = {}, added = 0;
+    (incoming || []).forEach(function (s) {
+      if (!s || typeof s.name !== "string" || !s.name.trim()) return;
+      var nm = s.name.trim(), key = nm.toLowerCase();
+      if (byName[key]) { if (s.id) idMap[s.id] = byName[key]; return; }
+      var nid = (typeof s.id === "string" && s.id && !sections.some(function (x) { return x.id === s.id; })) ? s.id : uid();
+      sections.push({ id: nid, name: nm });
+      byName[key] = nid;
+      if (s.id) idMap[s.id] = nid;
+      added++;
+    });
+    return { idMap: idMap, added: added };
+  }
+  function mergeTodos(incoming, sectionIdMap) {
+    var ids = {}, sigs = {};
+    todos.forEach(function (t) { ids[t.id] = 1; sigs[t.text] = 1; });
+    var valid = {}; sections.forEach(function (s) { valid[s.id] = 1; });
+    var first = sections[0].id;
+    var added = [];
+    (incoming || []).forEach(function (r) {
+      var t = normalizeTodo(r);
+      if (!t) return;
+      if (ids[t.id] || sigs[t.text]) return;
+      var sec = t.section;
+      if (sec && sectionIdMap && sectionIdMap[sec]) sec = sectionIdMap[sec];
+      if (!sec || !valid[sec]) sec = first;
+      t.section = sec;
+      ids[t.id] = 1; sigs[t.text] = 1; added.push(t);
+    });
+    return { merged: todos.concat(added), added: added.length };
+  }
+
+  function flash(msg, isErr) {
+    status = { msg: msg, error: !!isErr };
+    renderStatus();
+    if (statusTimer) clearTimeout(statusTimer);
+    statusTimer = setTimeout(function () { status = null; renderStatus(); }, 4500);
+  }
+
+  // ---- actions ----
+  function add() {
+    var ta = $("#ta"), tagin = $("#tagin");
+    var txt = ta.value.trim();
+    if (!txt) return;
+    entries.unshift({ id: uid(), text: txt, tags: parseTags(tagin.value), createdAt: new Date().toISOString() });
+    saveEntries();
+    ta.value = ""; tagin.value = "";
+    ta.style.height = "";
+    $("#addBtn").disabled = true;
+    ta.focus();
+    render();
+  }
+  function remove(id) {
+    entries = entries.filter(function (e) { return e.id !== id; });
+    confirmId = null;
+    saveEntries();
+    render();
+  }
+  function startEdit(id) {
+    var e = entries.filter(function (x) { return x.id === id; })[0];
+    if (!e) return;
+    editingId = id;
+    confirmId = null;
+    editBuf = { text: e.text, tags: e.tags.join(", ") };
+    renderList();
+    var t = document.getElementById("edit-text");
+    if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); autoGrow(t); }
+  }
+  function cancelEdit() { editingId = null; renderList(); }
+  function saveEdit(id) {
+    var txt = (editBuf.text || "").trim();
+    if (!txt) {
+      flash("A note can't be empty.", true);
+      var t = document.getElementById("edit-text"); if (t) t.focus();
+      return;
+    }
+    entries = entries.map(function (e) {
+      return e.id === id ? { id: e.id, text: txt, tags: parseTags(editBuf.tags || ""), createdAt: e.createdAt } : e;
+    });
+    editingId = null;
+    saveEntries();
+    render();
+  }
+  function exportMarkdown() { downloadFile(slug(spaceName()) + "-" + stamp() + ".md", toMarkdown(entries), "text/markdown"); markBackedUp(); menuOpen = false; render(); }
+  function exportJSON() { downloadFile(slug(spaceName()) + "-" + stamp() + ".json", toJSON(entries), "application/json"); markBackedUp(); menuOpen = false; render(); }
+  function triggerImport() { menuOpen = false; render(); $("#file").click(); }
+
+  function onImportFile(ev) {
+    var file = ev.target.files && ev.target.files[0];
+    ev.target.value = "";
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(String(reader.result));
+        var arr = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : null);
+        var todoArr = (data && Array.isArray(data.todos)) ? data.todos : [];
+        var secArr = (data && Array.isArray(data.sections)) ? data.sections : [];
+        if (!arr && !todoArr.length) throw new Error("nothing importable");
+        var res = arr ? mergeImported(arr) : { merged: entries, added: 0, skipped: 0 };
+        var sres = mergeSections(secArr);
+        var tres = mergeTodos(todoArr, sres.idMap);
+        if (res.added > 0) entries = res.merged;
+        if (sres.added > 0) saveSections();
+        if (tres.added > 0) { todos = tres.merged; saveTodos(); }
+        if (res.added > 0) saveEntries();
+        render();
+        var parts = [];
+        if (res.added > 0) parts.push(res.added + " " + (res.added === 1 ? "entry" : "entries"));
+        if (tres.added > 0) parts.push(tres.added + " to-do" + (tres.added === 1 ? "" : "s"));
+        if (sres.added > 0) parts.push(sres.added + " section" + (sres.added === 1 ? "" : "s"));
+        if (parts.length === 0) {
+          flash(res.skipped > 0 ? ("Nothing new — " + res.skipped + " already present") : "Nothing new to import", false);
+        } else {
+          flash("Imported " + parts.join(", ") + (res.skipped ? (" · skipped " + res.skipped + " duplicate" + (res.skipped === 1 ? "" : "s")) : ""), false);
+        }
+      } catch (e) {
+        flash("Couldn't read that file — expected a JSON export from this app.", true);
+      }
+    };
+    reader.onerror = function () { flash("Couldn't read that file.", true); };
+    reader.readAsText(file);
+  }
+  function toggleTheme() {
+    theme = (theme === "dark") ? "light" : "dark";
+    storeSet(THEME_KEY, theme);
+    render();
+  }
+
+  function setView(v) {
+    activeView = v;
+    storeSet(NS + "view", v);
+    editingTodoId = null;
+    render();
+  }
+  function switchSpace(id) {
+    spaceMenuOpen = false; addingSpace = false; confirmDelSpace = false;
+    if (id === activeSpace || !spaces.some(function (s) { return s.id === id; })) { renderSpaceMenu(); return; }
+    activeSpace = id;
+    storeSet(NS + "activeSpace", id);
+    loadSpace();
+    render();
+  }
+  function newSpace(name) {
+    var nm = (name || "").trim();
+    if (!nm) { var i = document.getElementById("newSpaceInput"); if (i) i.focus(); return; }
+    var id = uid();
+    spaces.push({ id: id, name: nm });
+    saveSpaces();
+    addingSpace = false; spaceMenuOpen = false; confirmDelSpace = false;
+    activeSpace = id;
+    storeSet(NS + "activeSpace", id);
+    loadSpace();
+    render();
+  }
+  function deleteCurrentSpace() {
+    if (spaces.length <= 1) { flash("Keep at least one space.", true); return; }
+    if (!confirmDelSpace) {
+      confirmDelSpace = true;
+      renderSpaceMenu();
+      if (confirmDelSpaceTimer) clearTimeout(confirmDelSpaceTimer);
+      confirmDelSpaceTimer = setTimeout(function () { confirmDelSpace = false; renderSpaceMenu(); }, 4000);
+      return;
+    }
+    confirmDelSpace = false;
+    if (confirmDelSpaceTimer) clearTimeout(confirmDelSpaceTimer);
+    var delId = activeSpace;
+    SPACE_SUFFIXES.forEach(function (suf) { storeRemove(NS + "sp:" + delId + ":" + suf); });
+    spaces = spaces.filter(function (s) { return s.id !== delId; });
+    saveSpaces();
+    activeSpace = spaces[0].id;
+    storeSet(NS + "activeSpace", activeSpace);
+    spaceMenuOpen = false;
+    loadSpace();
+    render();
+  }
+  function startEditTitle() {
+    editingTitle = true;
+    renderTitle();
+    var i = document.getElementById("title-input");
+    if (i) { i.focus(); i.select(); }
+  }
+  function saveTitle(v) {
+    var nm = (v || "").trim();
+    editingTitle = false;
+    if (nm) { currentSpace().name = nm; saveSpaces(); }
+    renderTitle();
+  }
+  function addTodo() {
+    var inp = $("#todoInput");
+    var txt = inp.value.trim();
+    if (!txt) return;
+    var sec = sections.some(function (s) { return s.id === addTargetSection; }) ? addTargetSection : sections[0].id;
+    todos.unshift({ id: uid(), text: txt, done: false, createdAt: new Date().toISOString(), section: sec });
+    saveTodos();
+    inp.value = "";
+    $("#todoAddBtn").disabled = true;
+    inp.focus();
+    render();
+  }
+  function toggleTodo(id) {
+    todos = todos.map(function (t) { return t.id === id ? { id: t.id, text: t.text, done: !t.done, createdAt: t.createdAt, section: t.section } : t; });
+    saveTodos();
+    render();
+  }
+  function removeTodo(id) {
+    todos = todos.filter(function (t) { return t.id !== id; });
+    saveTodos();
+    render();
+  }
+  function moveTodo(id, sectionId) {
+    todos = todos.map(function (t) { return t.id === id ? { id: t.id, text: t.text, done: t.done, createdAt: t.createdAt, section: sectionId } : t; });
+    saveTodos();
+    render();
+  }
+  function startEditTodo(id) {
+    editingTodoId = id;
+    renderTodos();
+    var inp = document.getElementById("todo-edit");
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }
+  function saveEditTodo(id, value) {
+    var txt = (value || "").trim();
+    editingTodoId = null;
+    if (!txt) { render(); return; }
+    todos = todos.map(function (t) { return t.id === id ? { id: t.id, text: txt, done: t.done, createdAt: t.createdAt, section: t.section } : t; });
+    saveTodos();
+    render();
+  }
+  function toggleCompletedCollapsed() {
+    completedCollapsed = !completedCollapsed;
+    storeSet(NS + "completedCollapsed", completedCollapsed ? "1" : "0");
+    confirmClear = false;
+    renderTodos();
+  }
+  function clearCompleted() {
+    if (!confirmClear) {
+      confirmClear = true;
+      renderTodos();
+      if (confirmClearTimer) clearTimeout(confirmClearTimer);
+      confirmClearTimer = setTimeout(function () { confirmClear = false; renderTodos(); }, 4000);
+      return;
+    }
+    confirmClear = false;
+    if (confirmClearTimer) clearTimeout(confirmClearTimer);
+    todos = todos.filter(function (t) { return !t.done; });
+    saveTodos();
+    render();
+  }
+
+  function addSection(name) {
+    var nm = (name || "").trim();
+    if (!nm) return;
+    sections.push({ id: uid(), name: nm });
+    addingSection = false;
+    saveSections();
+    render();
+  }
+  function startRenameSection(id) {
+    editingSectionId = id;
+    renderTodos();
+    var inp = document.getElementById("sec-name-input");
+    if (inp) { inp.focus(); inp.select(); }
+  }
+  function saveRenameSection(id, value) {
+    var nm = (value || "").trim();
+    editingSectionId = null;
+    if (!nm) { render(); return; }
+    sections = sections.map(function (s) { return s.id === id ? { id: s.id, name: nm } : s; });
+    saveSections();
+    render();
+  }
+  function deleteSection(id) {
+    if (sections.length <= 1) { flash("Keep at least one section.", true); return; }
+    var idx = sections.map(function (s) { return s.id; }).indexOf(id);
+    var fallback = sections[idx === 0 ? 1 : idx - 1].id;
+    todos = todos.map(function (t) { return t.section === id ? { id: t.id, text: t.text, done: t.done, createdAt: t.createdAt, section: fallback } : t; });
+    sections = sections.filter(function (s) { return s.id !== id; });
+    if (addTargetSection === id) { addTargetSection = sections[0].id; storeSet(nsKey("todosection"), addTargetSection); }
+    saveSections();
+    saveTodos();
+    render();
+  }
+  function moveSection(id, dir) {
+    var idx = sections.map(function (s) { return s.id; }).indexOf(id);
+    var ni = idx + dir;
+    if (idx < 0 || ni < 0 || ni >= sections.length) return;
+    var tmp = sections[idx]; sections[idx] = sections[ni]; sections[ni] = tmp;
+    saveSections();
+    render();
+  }
+
+  // ---- rendering ----
+  var SUN = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3.2" stroke="currentColor" stroke-width="1.4"></circle><path d="M8 1.5v1.4M8 13.1v1.4M14.5 8h-1.4M2.9 8H1.5M12.6 3.4l-1 1M4.4 11.6l-1 1M12.6 12.6l-1-1M4.4 4.4l-1-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>';
+  var MOON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.4A5.5 5.5 0 016.6 2.5a5.5 5.5 0 106.9 6.9z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var TRASH = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2.5h4V4M5 4l.5 9h5L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var PENCIL = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10.8 2.4l2.8 2.8M2.5 13.5l.9-3 7-7 2.1 2.1-7 7-3 .9z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var CHECK = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var CHEVUP = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var CHEVDOWN = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+
+  function renderTheme() {
+    $("#root").classList.toggle("dark", theme === "dark");
+    var b = $("#themeBtn");
+    b.innerHTML = theme === "dark" ? SUN : MOON;
+    b.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    b.title = theme === "dark" ? "Light mode" : "Dark mode";
+  }
+  function renderTabs() {
+    $("#tab-log").classList.toggle("active", activeView === "log");
+    $("#tab-todos").classList.toggle("active", activeView === "todos");
+    $("#view-log").style.display = activeView === "log" ? "block" : "none";
+    $("#view-todos").style.display = activeView === "todos" ? "block" : "none";
+    var openCount = todos.filter(function (t) { return !t.done; }).length;
+    $("#todoBadge").textContent = openCount ? String(openCount) : "";
+  }
+  function renderCount() {
+    if (activeView === "todos") {
+      var open = todos.filter(function (t) { return !t.done; }).length;
+      $("#count").textContent = todos.length ? (open + " open") : "";
+    } else {
+      $("#count").textContent = entries.length ? (entries.length + " " + (entries.length === 1 ? "entry" : "entries")) : "";
+    }
+  }
+  function todoItemHtml(t) {
+    var h = '<div class="wl-todo' + (t.done ? " done" : "") + '">';
+    h += '<button class="wl-check' + (t.done ? " done" : "") + '" data-toggle="' + esc(t.id) + '" aria-label="Toggle done">' + (t.done ? CHECK : "") + '</button>';
+    if (editingTodoId === t.id) {
+      h += '<input class="wl-todo-edit" id="todo-edit" data-save-todo="' + esc(t.id) + '" value="' + esc(t.text) + '">';
+    } else {
+      h += '<div class="wl-todo-text" data-edit-todo="' + esc(t.id) + '" title="Click to edit">' + esc(t.text) + '</div>';
+      h += '<div class="wl-todo-tools">';
+      h += '<select class="wl-move-select" data-move="' + esc(t.id) + '" aria-label="Move to section">' +
+        sections.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === t.section ? " selected" : "") + '>' + esc(s.name) + '</option>'; }).join("") +
+        '</select>';
+      h += '<button class="wl-act wl-del" data-del-todo="' + esc(t.id) + '" aria-label="Delete to-do">' + TRASH + '</button>';
+      h += '</div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function renderTodos() {
+    // composer section dropdown
+    var sel = $("#todoSection");
+    var optHtml = sections.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>'; }).join("");
+    if (sel.getAttribute("data-sig") !== optHtml) { sel.innerHTML = optHtml; sel.setAttribute("data-sig", optHtml); }
+    if (!sections.some(function (s) { return s.id === addTargetSection; })) addTargetSection = sections[0].id;
+    sel.value = addTargetSection;
+
+    // add-section form visibility
+    $("#addSectionBtn").style.display = addingSection ? "none" : "inline-block";
+    $("#addSectionForm").style.display = addingSection ? "inline" : "none";
+
+    var html = "";
+    sections.forEach(function (s, idx) {
+      var inSec = todos.filter(function (t) { return t.section === s.id && !t.done; });
+      var openN = inSec.length;
+      html += '<section class="wl-sec"><div class="wl-sec-head">';
+      if (editingSectionId === s.id) {
+        html += '<input class="wl-sec-name-input" id="sec-name-input" data-rename="' + esc(s.id) + '" value="' + esc(s.name) + '" maxlength="40">';
+      } else {
+        html += '<span class="wl-sec-name" data-rename-start="' + esc(s.id) + '" title="Rename section">' + esc(s.name) + '</span>';
+        html += '<span class="wl-sec-count wl-mono">' + (openN ? (openN + " open") : "") + '</span>';
+      }
+      html += '<span class="wl-sec-tools">';
+      html += '<button class="wl-sec-tool" data-rename-start="' + esc(s.id) + '" aria-label="Rename section">' + PENCIL + '</button>';
+      html += '<button class="wl-sec-tool" data-sec-up="' + esc(s.id) + '" aria-label="Move section up"' + (idx === 0 ? " disabled" : "") + '>' + CHEVUP + '</button>';
+      html += '<button class="wl-sec-tool" data-sec-down="' + esc(s.id) + '" aria-label="Move section down"' + (idx === sections.length - 1 ? " disabled" : "") + '>' + CHEVDOWN + '</button>';
+      html += '<button class="wl-sec-tool danger" data-sec-del="' + esc(s.id) + '" aria-label="Delete section">' + TRASH + '</button>';
+      html += '</span></div>';
+      if (inSec.length === 0) {
+        html += '<div class="wl-sec-empty">No to-dos here yet.</div>';
+      } else {
+        inSec.forEach(function (t) { html += todoItemHtml(t); });
+      }
+      html += '</section>';
+    });
+    var container = $("#todoSections");
+    container.innerHTML = html;
+
+    Array.prototype.forEach.call(container.querySelectorAll("[data-toggle]"), function (b) {
+      b.addEventListener("click", function () { toggleTodo(b.getAttribute("data-toggle")); });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll("[data-del-todo]"), function (b) {
+      b.addEventListener("click", function () { removeTodo(b.getAttribute("data-del-todo")); });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll("[data-edit-todo]"), function (b) {
+      b.addEventListener("click", function () { startEditTodo(b.getAttribute("data-edit-todo")); });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll("[data-move]"), function (sl) {
+      sl.addEventListener("change", function () { moveTodo(sl.getAttribute("data-move"), sl.value); });
+    });
+    var ed = container.querySelector("[data-save-todo]");
+    if (ed) {
+      var tid = ed.getAttribute("data-save-todo");
+      ed.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") { ev.preventDefault(); saveEditTodo(tid, ed.value); }
+        else if (ev.key === "Escape") { ev.preventDefault(); editingTodoId = null; render(); }
+      });
+      ed.addEventListener("blur", function () { saveEditTodo(tid, ed.value); });
+    }
+    Array.prototype.forEach.call(container.querySelectorAll("[data-rename-start]"), function (b) {
+      b.addEventListener("click", function () { startRenameSection(b.getAttribute("data-rename-start")); });
+    });
+    var ri = container.querySelector("[data-rename]");
+    if (ri) {
+      var sid = ri.getAttribute("data-rename");
+      ri.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") { ev.preventDefault(); saveRenameSection(sid, ri.value); }
+        else if (ev.key === "Escape") { ev.preventDefault(); editingSectionId = null; render(); }
+      });
+      ri.addEventListener("blur", function () { saveRenameSection(sid, ri.value); });
+    }
+    Array.prototype.forEach.call(container.querySelectorAll("[data-sec-up]"), function (b) {
+      b.addEventListener("click", function () { moveSection(b.getAttribute("data-sec-up"), -1); });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll("[data-sec-down]"), function (b) {
+      b.addEventListener("click", function () { moveSection(b.getAttribute("data-sec-down"), 1); });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll("[data-sec-del]"), function (b) {
+      b.addEventListener("click", function () { deleteSection(b.getAttribute("data-sec-del")); });
+    });
+
+    // Completed group (collapsible, holds done tasks pulled from all sections)
+    var doneList = todos.filter(function (t) { return t.done; });
+    var comp = $("#todoCompleted");
+    if (doneList.length === 0) {
+      comp.innerHTML = "";
+      confirmClear = false;
+    } else {
+      var clearLabel = confirmClear ? "Delete all permanently?" : "Clear completed";
+      var ch = '<div class="wl-completed">';
+      ch += '<div class="wl-completed-head' + (completedCollapsed ? " collapsed" : "") + '" id="completedHead">';
+      ch += '<span class="wl-chev">' + CHEVDOWN + '</span>';
+      ch += '<span class="wl-completed-title">Completed</span>';
+      ch += '<span class="wl-completed-count wl-mono">' + doneList.length + '</span>';
+      ch += '<button class="wl-clear' + (confirmClear ? " confirm" : "") + '" id="clearCompleted">' + esc(clearLabel) + '</button>';
+      ch += '</div>';
+      if (!completedCollapsed) {
+        ch += '<div class="wl-completed-list">';
+        doneList.forEach(function (t) {
+          ch += '<div class="wl-todo done">';
+          ch += '<button class="wl-check done" data-toggle="' + esc(t.id) + '" aria-label="Mark as not done">' + CHECK + '</button>';
+          ch += '<div class="wl-todo-text">' + esc(t.text) + '</div>';
+          ch += '<div class="wl-todo-tools"><button class="wl-act wl-del" data-del-todo="' + esc(t.id) + '" aria-label="Delete permanently">' + TRASH + '</button></div>';
+          ch += '</div>';
+        });
+        ch += '</div>';
+      }
+      ch += '</div>';
+      comp.innerHTML = ch;
+
+      $("#completedHead").addEventListener("click", function (ev) {
+        if (ev.target.closest("#clearCompleted")) return;
+        toggleCompletedCollapsed();
+      });
+      $("#clearCompleted").addEventListener("click", function (ev) { ev.stopPropagation(); clearCompleted(); });
+      Array.prototype.forEach.call(comp.querySelectorAll("[data-toggle]"), function (b) {
+        b.addEventListener("click", function () { toggleTodo(b.getAttribute("data-toggle")); });
+      });
+      Array.prototype.forEach.call(comp.querySelectorAll("[data-del-todo]"), function (b) {
+        b.addEventListener("click", function () { removeTodo(b.getAttribute("data-del-todo")); });
+      });
+    }
+  }
+  function updateBackdrop() {
+    $("#backdrop").style.display = (menuOpen || spaceMenuOpen) ? "block" : "none";
+  }
+  function renderSpaceMenu() {
+    var menu = $("#spaceMenu"), btn = $("#spaceMenuBtn");
+    btn.setAttribute("aria-expanded", spaceMenuOpen ? "true" : "false");
+    if (!spaceMenuOpen) { menu.innerHTML = ""; updateBackdrop(); return; }
+    updateBackdrop();
+    var h = '<div class="wl-menu wl-space-menu">';
+    h += '<div class="wl-menu-label wl-mono">Spaces</div>';
+    spaces.forEach(function (s) {
+      h += '<button class="wl-space-item' + (s.id === activeSpace ? " active" : "") + '" data-space="' + esc(s.id) + '">' +
+        esc(s.name) + (s.id === activeSpace ? '<span class="wl-check-mark">' + CHECK + '</span>' : '') + '</button>';
+    });
+    h += '<div class="wl-divider"></div>';
+    if (addingSpace) {
+      h += '<div class="wl-space-new"><input id="newSpaceInput" maxlength="40" placeholder="New space name"><button id="newSpaceSave">Add</button></div>';
+    } else {
+      h += '<button data-act="newspace">+ New space</button>';
+    }
+    if (spaces.length > 1) {
+      h += '<div class="wl-divider"></div>';
+      h += '<button data-act="delspace" style="color:' + (confirmDelSpace ? "var(--danger)" : "var(--muted)") + (confirmDelSpace ? ';font-weight:600' : "") + '">' +
+        (confirmDelSpace ? ("Delete \u201C" + esc(spaceName()) + "\u201D and its data?") : "Delete this space") + '</button>';
+    }
+    h += '</div>';
+    menu.innerHTML = h;
+    Array.prototype.forEach.call(menu.querySelectorAll("[data-space]"), function (b) {
+      b.addEventListener("click", function () { switchSpace(b.getAttribute("data-space")); });
+    });
+    var ns = menu.querySelector('[data-act="newspace"]');
+    if (ns) ns.addEventListener("click", function () { addingSpace = true; renderSpaceMenu(); var i = document.getElementById("newSpaceInput"); if (i) i.focus(); });
+    var nsi = menu.querySelector("#newSpaceInput");
+    if (nsi) nsi.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); newSpace(nsi.value); }
+      else if (ev.key === "Escape") { ev.preventDefault(); addingSpace = false; renderSpaceMenu(); }
+    });
+    var nss = menu.querySelector("#newSpaceSave");
+    if (nss) nss.addEventListener("click", function () { newSpace(document.getElementById("newSpaceInput").value); });
+    var ds = menu.querySelector('[data-act="delspace"]');
+    if (ds) ds.addEventListener("click", deleteCurrentSpace);
+  }
+  function renderMenu() {
+    var menu = $("#menu"), btn = $("#backupBtn");
+    btn.setAttribute("aria-expanded", menuOpen ? "true" : "false");
+    if (!menuOpen) { menu.innerHTML = ""; updateBackdrop(); return; }
+    updateBackdrop();
+    var h = '<div class="wl-menu">';
+    if (entries.length > 0 || todos.length > 0) {
+      var bs = backupStatus();
+      var dirty = bs.changes > 0;
+      var line1 = dirty
+        ? (bs.changes + " change" + (bs.changes === 1 ? "" : "s") + " since last backup")
+        : "Backed up — up to date";
+      var line2 = bs.ever ? ("Last backup " + relTime(bs.at)) : "Not backed up yet";
+      h += '<div class="wl-bkstatus">' +
+             '<div class="wl-bk-line1"><span class="wl-bk-dot ' + (dirty ? "dirty" : "clean") + '"></span>' + esc(line1) + '</div>' +
+             '<div class="wl-bk-line2">' + esc(line2) + '</div>' +
+           '</div>';
+      h += '<div class="wl-divider"></div>';
+      h += '<div class="wl-menu-label wl-mono">Export</div>';
+      h += '<button data-act="md">Markdown <span class="wl-msub wl-mono">.md</span></button>';
+      h += '<button data-act="json">JSON <span class="wl-msub wl-mono">.json</span></button>';
+      h += '<div class="wl-divider"></div>';
+    }
+    h += '<button data-act="import">Import <span class="wl-msub wl-mono">.json</span></button></div>';
+    menu.innerHTML = h;
+    var md = menu.querySelector('[data-act="md"]'); if (md) md.addEventListener("click", exportMarkdown);
+    var js = menu.querySelector('[data-act="json"]'); if (js) js.addEventListener("click", exportJSON);
+    var im = menu.querySelector('[data-act="import"]'); if (im) im.addEventListener("click", triggerImport);
+  }
+  function renderStatus() {
+    var s = $("#status");
+    if (!status) { s.innerHTML = ""; return; }
+    s.innerHTML = '<div class="wl-status' + (status.error ? " err" : "") + '" role="status">' + esc(status.msg) + "</div>";
+  }
+  function renderControls() {
+    var controls = $("#controls");
+    controls.style.display = entries.length > 0 ? "flex" : "none";
+    if (entries.length === 0) return;
+    var counts = {};
+    entries.forEach(function (e) { e.tags.forEach(function (t) { counts[t] = (counts[t] || 0) + 1; }); });
+    var tags = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 8);
+    var bar = $("#tagbar");
+    bar.innerHTML = tags.map(function (t) {
+      return '<button class="wl-tagfilter wl-mono' + (activeTag === t ? " active" : "") + '" data-tag="' + esc(t) + '">' + esc(t) + "</button>";
+    }).join("");
+    Array.prototype.forEach.call(bar.querySelectorAll("[data-tag]"), function (b) {
+      b.addEventListener("click", function () {
+        var t = b.getAttribute("data-tag");
+        activeTag = (activeTag === t) ? null : t;
+        renderControls(); renderList();
+      });
+    });
+  }
+  function getFiltered() {
+    var q = query.trim().toLowerCase();
+    return entries.filter(function (e) {
+      if (activeTag && e.tags.indexOf(activeTag) === -1) return false;
+      if (!q) return true;
+      return e.text.toLowerCase().indexOf(q) !== -1 || e.tags.some(function (t) { return t.indexOf(q) !== -1; });
+    });
+  }
+  function renderList() {
+    var list = $("#list");
+    if (entries.length === 0) {
+      list.innerHTML =
+        '<div class="wl-empty"><h3>No entries yet</h3>' +
+        '<p>Jot down the first thing above. Everything you log stays here.</p>' +
+        '<button class="wl-importbtn" id="emptyImport">' +
+        '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 10.2V1.8M5 5.4 8 1.8l3 3.6M2.8 11.5v1.2a1.5 1.5 0 0 0 1.5 1.5h7.4a1.5 1.5 0 0 0 1.5-1.5v-1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>' +
+        'Import a backup</button></div>';
+      var ei = $("#emptyImport"); if (ei) ei.addEventListener("click", triggerImport);
+      return;
+    }
+    var filtered = getFiltered();
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="wl-empty"><h3>Nothing matches</h3><p>Clear the search or tag filter to see all entries.</p></div>';
+      return;
+    }
+    var groups = [], cur = null;
+    filtered.forEach(function (e) {
+      var k = dayKey(e.createdAt);
+      if (!cur || cur.key !== k) { cur = { key: k, label: dayLabel(e.createdAt), items: [] }; groups.push(cur); }
+      cur.items.push(e);
+    });
+    var html = "";
+    groups.forEach(function (g) {
+      html += '<section class="wl-daygroup"><div class="wl-dayhead wl-mono">' + esc(g.label) + "</div>";
+      g.items.forEach(function (e) {
+        html += '<article class="wl-entry">';
+        html += '<div class="wl-time wl-mono">' + esc(timeLabel(e.createdAt)) + "</div>";
+        html += '<div class="wl-body">';
+        if (editingId === e.id) {
+          html += '<div class="wl-edit">' +
+            '<textarea class="wl-edit-text" id="edit-text">' + esc(editBuf.text) + '</textarea>' +
+            '<input class="wl-edit-tags wl-mono" id="edit-tags" placeholder="tags: deploy, oncall" value="' + esc(editBuf.tags) + '">' +
+            '<div class="wl-edit-actions">' +
+              '<button class="wl-save" data-save="' + esc(e.id) + '">Save</button>' +
+              '<button class="wl-cancel" data-cancel="1">Cancel</button>' +
+            '</div>' +
+          '</div>';
+        } else {
+          html += '<div class="wl-text">' + esc(e.text) + "</div>";
+          if (e.tags.length) {
+            html += '<div class="wl-chips">' + e.tags.map(function (t) {
+              return '<span class="wl-chip wl-mono" data-tag="' + esc(t) + '">' + esc(t) + "</span>";
+            }).join("") + "</div>";
+          }
+          if (confirmId === e.id) {
+            html += '<button class="wl-confirm wl-mono" data-confirm="' + esc(e.id) + '">Delete?</button>';
+          } else {
+            html += '<div class="wl-actions">' +
+              '<button class="wl-act" aria-label="Edit entry" data-edit="' + esc(e.id) + '">' + PENCIL + '</button>' +
+              '<button class="wl-act wl-del" aria-label="Delete entry" data-del="' + esc(e.id) + '">' + TRASH + '</button>' +
+            '</div>';
+          }
+        }
+        html += "</div></article>";
+      });
+      html += "</section>";
+    });
+    list.innerHTML = html;
+
+    Array.prototype.forEach.call(list.querySelectorAll("[data-tag]"), function (b) {
+      b.addEventListener("click", function () {
+        var t = b.getAttribute("data-tag");
+        activeTag = (activeTag === t) ? null : t;
+        renderControls(); renderList();
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll("[data-del]"), function (b) {
+      b.addEventListener("click", function () { confirmId = b.getAttribute("data-del"); renderList(); });
+      b.addEventListener("mouseleave", function () {
+        if (confirmId === b.getAttribute("data-del")) { confirmId = null; renderList(); }
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll("[data-confirm]"), function (b) {
+      b.addEventListener("click", function () { remove(b.getAttribute("data-confirm")); });
+      b.addEventListener("mouseleave", function () {
+        if (confirmId === b.getAttribute("data-confirm")) { confirmId = null; renderList(); }
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll("[data-edit]"), function (b) {
+      b.addEventListener("click", function () { startEdit(b.getAttribute("data-edit")); });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll("[data-save]"), function (b) {
+      b.addEventListener("click", function () { saveEdit(b.getAttribute("data-save")); });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll("[data-cancel]"), function (b) {
+      b.addEventListener("click", cancelEdit);
+    });
+    var et = list.querySelector("#edit-text");
+    if (et) {
+      et.addEventListener("input", function () { editBuf.text = et.value; autoGrow(et); });
+      et.addEventListener("keydown", function (ev) {
+        if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") { ev.preventDefault(); saveEdit(editingId); }
+        else if (ev.key === "Escape") { ev.preventDefault(); cancelEdit(); }
+      });
+    }
+    var eg = list.querySelector("#edit-tags");
+    if (eg) eg.addEventListener("input", function () { editBuf.tags = eg.value; });
+  }
+
+  function renderBackupDot() {
+    var dot = $("#bkDot");
+    if (!dot) return;
+    var dirty = (entries.length > 0 || todos.length > 0) && backupStatus().changes > 0;
+    dot.style.display = dirty ? "inline-block" : "none";
+  }
+
+  function renderTitle() {
+    var el = $("#appTitle");
+    document.title = spaceName();
+    if (editingTitle) {
+      el.onclick = null;
+      el.innerHTML = '<input id="title-input" class="wl-title-input" maxlength="60" value="' + esc(spaceName()) + '">';
+      var i = document.getElementById("title-input");
+      i.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") { ev.preventDefault(); saveTitle(i.value); }
+        else if (ev.key === "Escape") { ev.preventDefault(); editingTitle = false; renderTitle(); }
+      });
+      i.addEventListener("blur", function () { saveTitle(i.value); });
+    } else {
+      el.textContent = spaceName();
+      el.title = "Click to rename this space";
+      el.onclick = startEditTitle;
+    }
+  }
+
+  function render() {
+    renderTitle();
+    renderSpaceMenu();
+    renderTheme();
+    renderTabs();
+    renderCount();
+    renderBackupDot();
+    renderMenu();
+    renderStatus();
+    renderControls();
+    renderList();
+    renderTodos();
+  }
+
+  // ---- wire up static controls ----
+  $("#addBtn").addEventListener("click", add);
+  $("#ta").addEventListener("input", function () {
+    $("#addBtn").disabled = !this.value.trim();
+    autoGrow(this);
+  });
+  function autoGrow(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 340) + "px";
+  }
+  function keyAdd(e) { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); add(); } }
+  $("#ta").addEventListener("keydown", keyAdd);
+  $("#tagin").addEventListener("keydown", keyAdd);
+  $("#search").addEventListener("input", function () { query = this.value; renderList(); });
+  $("#themeBtn").addEventListener("click", toggleTheme);
+  $("#backupBtn").addEventListener("click", function () { menuOpen = !menuOpen; if (menuOpen) spaceMenuOpen = false; renderMenu(); renderSpaceMenu(); });
+  $("#spaceMenuBtn").addEventListener("click", function () { spaceMenuOpen = !spaceMenuOpen; if (spaceMenuOpen) menuOpen = false; addingSpace = false; confirmDelSpace = false; renderSpaceMenu(); renderMenu(); });
+  $("#backdrop").addEventListener("click", function () { menuOpen = false; spaceMenuOpen = false; addingSpace = false; confirmDelSpace = false; renderMenu(); renderSpaceMenu(); });
+  $("#file").addEventListener("change", onImportFile);
+
+  $("#tab-log").addEventListener("click", function () { setView("log"); });
+  $("#tab-todos").addEventListener("click", function () { setView("todos"); });
+  $("#todoAddBtn").addEventListener("click", addTodo);
+  $("#todoInput").addEventListener("input", function () { $("#todoAddBtn").disabled = !this.value.trim(); });
+  $("#todoInput").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); addTodo(); }
+  });
+  $("#todoSection").addEventListener("change", function () {
+    addTargetSection = this.value;
+    storeSet(nsKey("todosection"), addTargetSection);
+  });
+  $("#addSectionBtn").addEventListener("click", function () {
+    addingSection = true;
+    $("#addSectionInput").value = "";
+    renderTodos();
+    $("#addSectionInput").focus();
+  });
+  $("#addSectionSave").addEventListener("click", function () { addSection($("#addSectionInput").value); });
+  $("#addSectionCancel").addEventListener("click", function () { addingSection = false; renderTodos(); });
+  $("#addSectionInput").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); addSection(this.value); }
+    else if (e.key === "Escape") { e.preventDefault(); addingSection = false; renderTodos(); }
+  });
+
+  render();
+  if (!storageOk) {
+    flash("Heads up: this browser is blocking local storage, so entries won't persist after you close the tab. Export to keep them.", true);
+  }
+})();
+</script>
+</body>
+</html>
