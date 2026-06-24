@@ -338,10 +338,9 @@
   .wl-chip:hover { background: var(--chip-hover); }
   .wl-actions {
     position: absolute; right: 0; top: 3px; display: flex; gap: 2px;
-    opacity: 0; transition: opacity .12s ease;
+    opacity: 0; transition: opacity .12s ease; background: var(--bg); padding-left: 10px;
   }
   .wl-entry:hover .wl-actions { opacity: 1; }
-  @media (hover: none) { .wl-actions { opacity: .55; } }
   .wl-act {
     border: 0; background: transparent; cursor: pointer; color: var(--faint);
     padding: 4px; border-radius: 6px; display: inline-flex;
@@ -419,6 +418,14 @@
     .wl-tab { padding: 11px 6px; }
     .wl-clear, .wl-linkbtn { padding: 7px 10px; }
     .wl-menu button { padding: 11px 10px; }
+    /* No hover on touch, so keep action controls visible */
+    .wl-actions, .wl-todo-tools, .wl-sec-tools { opacity: 1; }
+    /* Reserve room so the controls don't sit on top of the text */
+    .wl-text { padding-right: 54px; }
+    .wl-todo-text { padding-right: 84px; }
+    /* Easier-to-tap filter chips */
+    .wl-tagfilter { padding: 7px 11px; }
+    .wl-chip { padding: 5px 10px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .wl-root * { transition: none !important; }
