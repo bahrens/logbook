@@ -244,16 +244,16 @@
     font: inherit; font-size: 12px; padding: 5px 8px; cursor: pointer; outline: none;
   }
   .wl-section-select:focus { border-color: var(--accent); }
-  /* Move-to-section: just an icon, with the native section picker overlaid invisibly. */
+  /* Move-to-section: an icon that opens a small app-styled menu (consistent
+     padding/look across browsers, unlike a native select popup). */
   .wl-move { position: relative; }
-  .wl-move-select {
-    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
-    box-sizing: border-box; padding: 2px 12px; border: 0; opacity: 0; cursor: pointer;
-    font-size: 16px; /* keeps iOS from zooming the page when the picker opens */
-  }
-  /* Show a focus ring only for keyboard users; the select itself is transparent,
-     so the ring goes on the icon wrapper. Invisible for mouse/touch. */
-  .wl-move:has(.wl-move-select:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .wl-move-menu { top: 30px; right: 0; left: auto; min-width: 158px; }
+  .wl-move-menu .wl-move-item { justify-content: flex-start; }
+  .wl-move-menu .wl-check-mark { margin-left: auto; color: var(--accent); display: inline-flex; }
+  .wl-move-menu .wl-move-item.active { font-weight: 600; }
+  /* Keep the row's tools visible and lift it above later rows while its menu is open. */
+  .wl-todo:has(.wl-move-menu) { position: relative; z-index: 30; }
+  .wl-todo:has(.wl-move-menu) .wl-todo-tools { opacity: 1; }
 
   .wl-sec { margin-top: 22px; }
   .wl-sec-head {
@@ -452,7 +452,7 @@
     /* Keep inputs >= 16px so iOS Safari doesn't zoom the page on focus */
     .wl-textarea, .wl-taginput, .wl-todo-input, .wl-todo-edit, .wl-edit-text,
     .wl-edit-tags, .wl-section-input, .wl-sec-name-input, .wl-search input,
-    .wl-title-input, .wl-section-select, .wl-move-select, .wl-space-new input {
+    .wl-title-input, .wl-section-select, .wl-space-new input {
       font-size: 16px;
     }
   }
@@ -675,6 +675,7 @@
   var editingId = null;
   var editBuf = { text: "", tags: "" };
   var editingTodoId = null;
+  var openMoveId = null;
   var editingSectionId = null;
   var suppressBlurSave = false;
   var addingSection = false;
@@ -1205,10 +1206,20 @@
       h += '<div class="wl-todo-text" data-edit-todo="' + esc(t.id) + '" title="Click to edit">' + esc(t.text) + '</div>';
       h += '<div class="wl-todo-tools">';
       if (sections.length > 1) {
-        h += '<span class="wl-act wl-move" title="Move to section">' + MOVEICON +
-          '<select class="wl-move-select" data-move="' + esc(t.id) + '" aria-label="Move to section">' +
-          sections.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === t.section ? " selected" : "") + '>' + esc(s.name) + '</option>'; }).join("") +
-          '</select></span>';
+        h += '<span class="wl-move">';
+        h += '<button class="wl-act wl-move-btn" data-move-btn="' + esc(t.id) + '" aria-label="Move to section" aria-haspopup="true" aria-expanded="' + (openMoveId === t.id ? "true" : "false") + '">' + MOVEICON + '</button>';
+        if (openMoveId === t.id) {
+          h += '<div class="wl-menu wl-move-menu">';
+          h += '<div class="wl-menu-label wl-mono">Move to</div>';
+          h += sections.map(function (s) {
+            return '<button class="wl-move-item' + (s.id === t.section ? " active" : "") + '" data-move-to="' + esc(s.id) + '" data-move-todo="' + esc(t.id) + '">' +
+              '<span>' + esc(s.name) + '</span>' +
+              (s.id === t.section ? '<span class="wl-check-mark">' + CHECK + '</span>' : "") +
+              '</button>';
+          }).join("");
+          h += '</div>';
+        }
+        h += '</span>';
       }
       h += '<button class="wl-act wl-del" data-del-todo="' + esc(t.id) + '" aria-label="Delete to-do">' + TRASH + '</button>';
       h += '</div>';
@@ -1270,8 +1281,22 @@
     Array.prototype.forEach.call(container.querySelectorAll("[data-edit-todo]"), function (b) {
       b.addEventListener("click", function () { startEditTodo(b.getAttribute("data-edit-todo")); });
     });
-    Array.prototype.forEach.call(container.querySelectorAll("[data-move]"), function (sl) {
-      sl.addEventListener("change", function () { moveTodo(sl.getAttribute("data-move"), sl.value); });
+    Array.prototype.forEach.call(container.querySelectorAll("[data-move-btn]"), function (b) {
+      b.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        var id = b.getAttribute("data-move-btn");
+        openMoveId = (openMoveId === id) ? null : id;
+        if (openMoveId) { menuOpen = false; spaceMenuOpen = false; }
+        renderTodos(); renderMenu(); renderSpaceMenu();
+      });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll("[data-move-to]"), function (b) {
+      b.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        openMoveId = null;
+        moveTodo(b.getAttribute("data-move-todo"), b.getAttribute("data-move-to"));
+        updateBackdrop();
+      });
     });
     var ed = container.querySelector("[data-save-todo]");
     if (ed) {
@@ -1371,7 +1396,7 @@
     }
   }
   function updateBackdrop() {
-    $("#backdrop").style.display = (menuOpen || spaceMenuOpen) ? "block" : "none";
+    $("#backdrop").style.display = (menuOpen || spaceMenuOpen || openMoveId) ? "block" : "none";
   }
   function renderSpaceMenu() {
     var menu = $("#spaceMenu"), btn = $("#spaceMenuBtn");
@@ -1647,9 +1672,9 @@
   $("#tagin").addEventListener("keydown", keyAdd);
   $("#search").addEventListener("input", function () { query = this.value; renderList(); });
   $("#themeBtn").addEventListener("click", toggleTheme);
-  $("#backupBtn").addEventListener("click", function () { menuOpen = !menuOpen; if (menuOpen) spaceMenuOpen = false; renderMenu(); renderSpaceMenu(); });
-  $("#spaceMenuBtn").addEventListener("click", function () { spaceMenuOpen = !spaceMenuOpen; if (spaceMenuOpen) menuOpen = false; addingSpace = false; confirmDelSpace = false; renderSpaceMenu(); renderMenu(); });
-  $("#backdrop").addEventListener("click", function () { menuOpen = false; spaceMenuOpen = false; addingSpace = false; confirmDelSpace = false; renderMenu(); renderSpaceMenu(); });
+  $("#backupBtn").addEventListener("click", function () { menuOpen = !menuOpen; if (menuOpen) { spaceMenuOpen = false; openMoveId = null; } renderMenu(); renderSpaceMenu(); renderTodos(); });
+  $("#spaceMenuBtn").addEventListener("click", function () { spaceMenuOpen = !spaceMenuOpen; if (spaceMenuOpen) { menuOpen = false; openMoveId = null; } addingSpace = false; confirmDelSpace = false; renderSpaceMenu(); renderMenu(); renderTodos(); });
+  $("#backdrop").addEventListener("click", function () { menuOpen = false; spaceMenuOpen = false; addingSpace = false; confirmDelSpace = false; openMoveId = null; renderMenu(); renderSpaceMenu(); renderTodos(); });
   $("#file").addEventListener("change", onImportFile);
 
   $("#tab-log").addEventListener("click", function () { setView("log"); });
