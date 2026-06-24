@@ -196,7 +196,18 @@
   .wl-todo-edit {
     flex: 1 1 auto; border: 1px solid var(--accent); border-radius: 7px; outline: none;
     font: inherit; font-size: 15px; padding: 5px 8px; background: var(--surface); color: var(--ink);
+    min-width: 0;
   }
+  .wl-inline-edit { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
+  .wl-inline-edit input { flex: 1 1 auto; min-width: 0; }
+  .wl-iconbtn {
+    flex: 0 0 auto; border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+    border-radius: 8px; padding: 8px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--muted); transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .wl-iconbtn:hover { color: var(--ink); }
+  .wl-iconbtn.save { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .wl-iconbtn.save:hover { background: var(--accent-hover); }
   .wl-todo-tools {
     position: absolute; right: 0; top: 5px; display: flex; align-items: center; gap: 6px;
     opacity: 0; transition: opacity .12s ease; background: var(--bg); padding-left: 10px;
@@ -631,6 +642,7 @@
   var editBuf = { text: "", tags: "" };
   var editingTodoId = null;
   var editingSectionId = null;
+  var suppressBlurSave = false;
   var addingSection = false;
   var completedCollapsed = (storeGet(NS + "completedCollapsed") === "0") ? false : true;
   var confirmClear = false;
@@ -1112,6 +1124,7 @@
   var TRASH = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2.5h4V4M5 4l.5 9h5L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
   var PENCIL = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10.8 2.4l2.8 2.8M2.5 13.5l.9-3 7-7 2.1 2.1-7 7-3 .9z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
   var CHECK = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var XICON = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
   var CHEVUP = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
   var CHEVDOWN = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
@@ -1142,7 +1155,11 @@
     var h = '<div class="wl-todo' + (t.done ? " done" : "") + '">';
     h += '<button class="wl-check' + (t.done ? " done" : "") + '" data-toggle="' + esc(t.id) + '" aria-label="Toggle done">' + (t.done ? CHECK : "") + '</button>';
     if (editingTodoId === t.id) {
-      h += '<input class="wl-todo-edit" id="todo-edit" data-save-todo="' + esc(t.id) + '" value="' + esc(t.text) + '">';
+      h += '<div class="wl-inline-edit">' +
+        '<input class="wl-todo-edit" id="todo-edit" data-save-todo="' + esc(t.id) + '" value="' + esc(t.text) + '">' +
+        '<button class="wl-iconbtn save" data-save-todo-btn="' + esc(t.id) + '" aria-label="Save">' + CHECK + '</button>' +
+        '<button class="wl-iconbtn" data-cancel-todo="1" aria-label="Cancel">' + XICON + '</button>' +
+        '</div>';
     } else {
       h += '<div class="wl-todo-text" data-edit-todo="' + esc(t.id) + '" title="Click to edit">' + esc(t.text) + '</div>';
       h += '<div class="wl-todo-tools">';
@@ -1174,17 +1191,22 @@
       var openN = inSec.length;
       html += '<section class="wl-sec"><div class="wl-sec-head">';
       if (editingSectionId === s.id) {
-        html += '<input class="wl-sec-name-input" id="sec-name-input" data-rename="' + esc(s.id) + '" value="' + esc(s.name) + '" maxlength="40">';
+        html += '<div class="wl-inline-edit">' +
+          '<input class="wl-sec-name-input" id="sec-name-input" data-rename="' + esc(s.id) + '" value="' + esc(s.name) + '" maxlength="40">' +
+          '<button class="wl-iconbtn save" data-rename-save="' + esc(s.id) + '" aria-label="Save">' + CHECK + '</button>' +
+          '<button class="wl-iconbtn" data-rename-cancel="1" aria-label="Cancel">' + XICON + '</button>' +
+          '</div>';
       } else {
         html += '<span class="wl-sec-name" data-rename-start="' + esc(s.id) + '" title="Rename section">' + esc(s.name) + '</span>';
         html += '<span class="wl-sec-count wl-mono">' + (openN ? (openN + " open") : "") + '</span>';
+        html += '<span class="wl-sec-tools">';
+        html += '<button class="wl-sec-tool" data-rename-start="' + esc(s.id) + '" aria-label="Rename section">' + PENCIL + '</button>';
+        html += '<button class="wl-sec-tool" data-sec-up="' + esc(s.id) + '" aria-label="Move section up"' + (idx === 0 ? " disabled" : "") + '>' + CHEVUP + '</button>';
+        html += '<button class="wl-sec-tool" data-sec-down="' + esc(s.id) + '" aria-label="Move section down"' + (idx === sections.length - 1 ? " disabled" : "") + '>' + CHEVDOWN + '</button>';
+        html += '<button class="wl-sec-tool danger" data-sec-del="' + esc(s.id) + '" aria-label="Delete section">' + TRASH + '</button>';
+        html += '</span>';
       }
-      html += '<span class="wl-sec-tools">';
-      html += '<button class="wl-sec-tool" data-rename-start="' + esc(s.id) + '" aria-label="Rename section">' + PENCIL + '</button>';
-      html += '<button class="wl-sec-tool" data-sec-up="' + esc(s.id) + '" aria-label="Move section up"' + (idx === 0 ? " disabled" : "") + '>' + CHEVUP + '</button>';
-      html += '<button class="wl-sec-tool" data-sec-down="' + esc(s.id) + '" aria-label="Move section down"' + (idx === sections.length - 1 ? " disabled" : "") + '>' + CHEVDOWN + '</button>';
-      html += '<button class="wl-sec-tool danger" data-sec-del="' + esc(s.id) + '" aria-label="Delete section">' + TRASH + '</button>';
-      html += '</span></div>';
+      html += '</div>';
       if (inSec.length === 0) {
         html += '<div class="wl-sec-empty">No to-dos here yet.</div>';
       } else {
@@ -1214,7 +1236,19 @@
         if (ev.key === "Enter") { ev.preventDefault(); saveEditTodo(tid, ed.value); }
         else if (ev.key === "Escape") { ev.preventDefault(); editingTodoId = null; render(); }
       });
-      ed.addEventListener("blur", function () { saveEditTodo(tid, ed.value); });
+      ed.addEventListener("blur", function () {
+        if (suppressBlurSave) { suppressBlurSave = false; return; }
+        saveEditTodo(tid, ed.value);
+      });
+      var tsave = container.querySelector("[data-save-todo-btn]");
+      if (tsave) tsave.addEventListener("click", function () { saveEditTodo(tid, ed.value); });
+      var tcancel = container.querySelector("[data-cancel-todo]");
+      if (tcancel) {
+        var suppress = function () { suppressBlurSave = true; };
+        tcancel.addEventListener("mousedown", suppress);
+        tcancel.addEventListener("touchstart", suppress, { passive: true });
+        tcancel.addEventListener("click", function () { suppressBlurSave = false; editingTodoId = null; render(); });
+      }
     }
     Array.prototype.forEach.call(container.querySelectorAll("[data-rename-start]"), function (b) {
       b.addEventListener("click", function () { startRenameSection(b.getAttribute("data-rename-start")); });
@@ -1226,7 +1260,19 @@
         if (ev.key === "Enter") { ev.preventDefault(); saveRenameSection(sid, ri.value); }
         else if (ev.key === "Escape") { ev.preventDefault(); editingSectionId = null; render(); }
       });
-      ri.addEventListener("blur", function () { saveRenameSection(sid, ri.value); });
+      ri.addEventListener("blur", function () {
+        if (suppressBlurSave) { suppressBlurSave = false; return; }
+        saveRenameSection(sid, ri.value);
+      });
+      var rsave = container.querySelector("[data-rename-save]");
+      if (rsave) rsave.addEventListener("click", function () { saveRenameSection(sid, ri.value); });
+      var rcancel = container.querySelector("[data-rename-cancel]");
+      if (rcancel) {
+        var suppressR = function () { suppressBlurSave = true; };
+        rcancel.addEventListener("mousedown", suppressR);
+        rcancel.addEventListener("touchstart", suppressR, { passive: true });
+        rcancel.addEventListener("click", function () { suppressBlurSave = false; editingSectionId = null; render(); });
+      }
     }
     Array.prototype.forEach.call(container.querySelectorAll("[data-sec-up]"), function (b) {
       b.addEventListener("click", function () { moveSection(b.getAttribute("data-sec-up"), -1); });
