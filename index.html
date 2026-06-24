@@ -498,9 +498,9 @@
 
     <div id="view-log">
       <div class="wl-composer">
-        <textarea class="wl-textarea" id="ta" placeholder="What happened? Decisions, blockers, follow-ups…"></textarea>
+        <textarea class="wl-textarea" id="ta" placeholder="What happened? Notes, decisions, things to remember…"></textarea>
         <div class="wl-composer-foot">
-          <input class="wl-taginput wl-mono" id="tagin" placeholder="tags: deploy, oncall, meeting">
+          <input class="wl-taginput wl-mono" id="tagin" placeholder="tags: work, ideas, personal">
           <button class="wl-add" id="addBtn" disabled>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
               <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
@@ -1465,7 +1465,7 @@
         if (editingId === e.id) {
           html += '<div class="wl-edit">' +
             '<textarea class="wl-edit-text" id="edit-text">' + esc(editBuf.text) + '</textarea>' +
-            '<input class="wl-edit-tags wl-mono" id="edit-tags" placeholder="tags: deploy, oncall" value="' + esc(editBuf.tags) + '">' +
+            '<input class="wl-edit-tags wl-mono" id="edit-tags" placeholder="tags: work, ideas, personal" value="' + esc(editBuf.tags) + '">' +
             '<div class="wl-edit-actions">' +
               '<button class="wl-save" data-save="' + esc(e.id) + '">Save</button>' +
               '<button class="wl-cancel" data-cancel="1">Cancel</button>' +
