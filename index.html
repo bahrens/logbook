@@ -57,9 +57,11 @@
   .wl-title-input {
     font: inherit; font-size: 22px; font-weight: 650; letter-spacing: -0.01em;
     border: 1px solid var(--accent); border-radius: 8px; padding: 1px 8px; margin: -2px 0;
-    background: var(--surface); color: var(--ink); outline: none; max-width: 100%;
+    background: var(--surface); color: var(--ink); outline: none;
+    width: 100%; max-width: 100%; box-sizing: border-box;
   }
-  .wl-headleft { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .wl-headleft { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1 1 auto; }
+  .wl-title.editing { flex: 1 1 auto; min-width: 0; }
   .wl-space-wrap { position: relative; }
   .wl-space-btn {
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
@@ -462,7 +464,7 @@
     <header class="wl-head">
       <div class="wl-headleft">
         <h1 class="wl-title" id="appTitle"></h1>
-        <div class="wl-space-wrap">
+        <div class="wl-space-wrap" id="spaceWrap">
           <button class="wl-space-btn" id="spaceMenuBtn" aria-haspopup="true" aria-expanded="false" aria-label="Switch space">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
           </button>
@@ -1539,17 +1541,35 @@
 
   function renderTitle() {
     var el = $("#appTitle");
+    var sw = $("#spaceWrap");
     document.title = spaceName();
     if (editingTitle) {
       el.onclick = null;
-      el.innerHTML = '<input id="title-input" class="wl-title-input" maxlength="60" value="' + esc(spaceName()) + '">';
+      el.classList.add("editing");
+      if (sw) sw.style.display = "none";
+      el.innerHTML = '<span class="wl-inline-edit">' +
+        '<input id="title-input" class="wl-title-input" maxlength="60" value="' + esc(spaceName()) + '">' +
+        '<button class="wl-iconbtn save" id="title-save" aria-label="Save">' + CHECK + '</button>' +
+        '<button class="wl-iconbtn" id="title-cancel" aria-label="Cancel">' + XICON + '</button>' +
+        '</span>';
       var i = document.getElementById("title-input");
       i.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter") { ev.preventDefault(); saveTitle(i.value); }
         else if (ev.key === "Escape") { ev.preventDefault(); editingTitle = false; renderTitle(); }
       });
-      i.addEventListener("blur", function () { saveTitle(i.value); });
+      i.addEventListener("blur", function () {
+        if (suppressBlurSave) { suppressBlurSave = false; return; }
+        saveTitle(i.value);
+      });
+      document.getElementById("title-save").addEventListener("click", function (ev) { ev.stopPropagation(); saveTitle(i.value); });
+      var tc = document.getElementById("title-cancel");
+      var suppressT = function () { suppressBlurSave = true; };
+      tc.addEventListener("mousedown", suppressT);
+      tc.addEventListener("touchstart", suppressT, { passive: true });
+      tc.addEventListener("click", function (ev) { ev.stopPropagation(); suppressBlurSave = false; editingTitle = false; renderTitle(); });
     } else {
+      el.classList.remove("editing");
+      if (sw) sw.style.display = "";
       el.textContent = spaceName();
       el.title = "Click to rename this space";
       el.onclick = startEditTitle;
